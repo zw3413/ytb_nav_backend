@@ -1,4 +1,5 @@
 #!/bin/bash
+#! uv pip freeze > requirements.lock
 #!chmod +x deploy.sh
 
 echo "🔄 Pulling latest code..."

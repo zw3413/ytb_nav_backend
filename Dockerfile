@@ -4,11 +4,11 @@ WORKDIR /app
 
 RUN pip install uv
 
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml requirements.lock ./
 
-# ✅ 使用 uv venv 安装依赖（会读取 pyproject.toml 和 uv.lock）
-RUN uv venv .venv && .venv/bin/uv pip sync
+# ✅ 使用 freeze 文件
+RUN uv pip sync requirements.lock
 
 COPY ./app /app
 
-CMD [".venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
