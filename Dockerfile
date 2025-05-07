@@ -7,7 +7,7 @@ RUN pip install uv
 COPY pyproject.toml requirements.lock ./
 
 # ✅ 使用 freeze 文件
-RUN uv pip sync requirements.lock
+RUN uv pip sync --system requirements.lock
 
 COPY ./app /app
 
