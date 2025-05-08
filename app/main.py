@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from app.ytb_mcp_server import get_video_summary
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 app.add_middleware(
@@ -28,10 +29,6 @@ async def summary_post(request: VideoRequest):
         raise HTTPException(status_code=500, detail=str(e))
     
 
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
-
-app = FastAPI()
 
 @app.post("/summary_mock")
 async def summary_mock():

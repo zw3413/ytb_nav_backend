@@ -8,6 +8,7 @@ git pull origin main
 echo "🛠️ Rebuilding Docker image..."
 docker stop fastapi-app || true
 docker rm fastapi-app || true
+echo "🛠️ start building Docker image..."
 docker build -t fastapi-app .
 
 echo "🚀 Starting new container..."
