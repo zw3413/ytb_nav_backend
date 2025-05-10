@@ -74,7 +74,7 @@ async def get_video_summary(video_url : str) ->json:
     
 
 async def test():
-    video_url = "https://www.youtube.com/watch?v=AG6AIdQi92Y"
+    video_url = "https://www.youtube.com/watch?v=SUY_E-I7O_Y&t=2876s"
     
     summary_result = await get_video_summary(video_url)
 

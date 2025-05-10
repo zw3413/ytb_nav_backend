@@ -37,31 +37,57 @@ def retrieve_video_info(url):
         return f"An error occurred: {str(e)}"
 
 def get_subtitle_url(languages, lang_code, format = 'vtt'):
-    if lang_code in languages and  languages[lang_code]:
-        for sub in languages[lang_code]:
-            if sub['ext'] == format:
-                return sub['url']
+    """
+    Get subtitle URL for a specific language code.
+    
+    Args:
+        languages (dict): Dictionary of available languages and their subtitles
+        lang_code (str): Language code ('en' or 'cn')
+        format (str): Subtitle format (default: 'vtt')
+    
+    Returns:
+        str: URL of the subtitle file if found, empty string otherwise
+    """
+    if not languages:
+        return ''
+        
+    # Define possible language code patterns
+    lang_patterns = {
+        'en': ['en', 'en-zh-Hans'],
+        'cn': ['cn', 'zh-Hans-zh-Hans', 'zh-Hans']
+    }
+    
+    # Get the patterns for the requested language
+    patterns = lang_patterns.get(lang_code, [])
+    
+    # Check each pattern in the languages dictionary
+    for pattern in patterns:
+        for lang_key in languages:
+            if lang_key.startswith(pattern):
+                for sub in languages[lang_key]:
+                    if sub['ext'] == format:
+                        return sub['url']
+    
     return ''
 
 def extract_subtitle_url_for_languages(info, lang_codes=['cn','en']):
     en_sub_url = '' 
     cn_sub_url = ''
-    lc_cn = 'cn'
-    lc_en = 'en'
     languages = None
     # 优先使用自动生成的字幕
     if 'automatic_captions' in info and info['automatic_captions']:
         languages = info['automatic_captions']
     elif 'subtitles' in info and info['subtitles']: # 如果没有的话看有没有附带字幕
-        lc_en = 'en-zh-Hans'
-        lc_cn = 'zh-Hans-zh-Hans'
         languages = info['subtitles']  
     if languages is not None: #如果找到了字幕，就提取出中文/英文字幕链接出来
-        for lang_code in lang_codes:
-            if lang_code == 'en':
-                en_sub_url = get_subtitle_url(languages, lc_en) # 提取英文字幕文件
-            elif lang_code == 'cn':
-                cn_sub_url = get_subtitle_url(languages, lc_cn) # 提取中文字幕文件
+        # 遍历所有可用的语言代码
+        for lang_key in languages:
+            # 检查是否是英文字幕
+            if lang_key.startswith('en'):
+                en_sub_url = get_subtitle_url(languages, 'en')
+            # 检查是否是中文字幕
+            elif lang_key.startswith('zh-Hans') or lang_key == 'cn':
+                cn_sub_url = get_subtitle_url(languages, 'cn')
     return en_sub_url, cn_sub_url
 
 def extract_video_into(info):
@@ -79,7 +105,7 @@ def get_video_info(video_url):
 
 # Example usage
 if __name__ == "__main__":
-    video_url = "https://www.youtube.com/watch?v=3fb5YNgvryA"
+    video_url = "https://www.youtube.com/watch?v=SUY_E-I7O_Y&t=2876s"
     video_info = get_video_info(video_url)
     print(video_info, file=sys.stderr)
 

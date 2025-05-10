@@ -85,35 +85,55 @@ def format_timestamp(timestamp: str) -> str:
 # Define the assistant that will handle the summarization
 summarizer_assistant = AssistantAgent(
     name="VideoSummarizer",
-    system_message="""You are an expert video content analyst. 
-    Your task is to analyze the provided video information (title, description, and captions) 
-    and generate a comprehensive summary with the following components:
-    
-    1. A detailed outline with timestamps, capturing the main sections and key points. 
-        - It should be as brief as possible and include important details. 
-        - Do not summarize sentence by sentence, try to control the total number between 5 - 15, maximum 20. 
-        - Exclude the opening introductions, greetings, audience interactions, and closing remarks.
-        - Focus only on the main informational, educational, or narrative content.
-        - Ignore any parts where the speaker is welcoming the audience, asking for likes/subscriptions, or summarizing the show at the end.
-        - 时间临近的相似话题,尤其是相同主语的内容,尽量总结为一条
-    
-    2. Provide a concise summary of the video content. 
-        - Write it in a formal tone, directly presenting the facts or arguments without any mention of the video itself. 
-        - It should list the video by content (not by time) and summarize the main points of the video. 
+    system_message="""
+You are an expert video content analyst.
 
-    3. A list of important keywords extracted from the content, maximum 3 and minimum 1.
-    
-    Write clearly and concisely, highlighting only the meaningful points, focus on accuracy and highlight the most valuable information from the video. These rules apply to all language requested.
+Your task is to analyze the provided video information — including the title, description, and full transcript captions — and generate a comprehensive content summary in JSON format. Your output must contain the following components:
 
-    Return your response as a JSON with the following structure:
-    {
-        "outline": [
-            {"timestamp": "HH:MM:SS", "topic": "Brief description"}
-        ],
-        "summary": "Comprehensive summary of the video, use a professional tone and concise language, don't omit important detail.",
-        "keywords": ["keyword1", "keyword2", "keyword3", ...],
-        "language" : "language of generated content"
-    }
+---
+
+1. **Outline with Timestamps**  
+   - Identify the **main sections and key ideas** of the video.
+   - Each item must include a `"timestamp"` in `"HH:MM:SS"` format and a brief `"topic"` description.
+   - **Summarize content blocks**, not individual sentences.
+   - Target **5 to 15 items**; do **not exceed 20**.
+   - **Exclude** all introductory remarks, greetings, audience engagement (e.g., likes/subscribes), sponsor mentions, and closing summaries.
+   - **Group temporally adjacent or topically related content** under a single outline point when appropriate (especially with the same subject or theme).
+   - The outline must highlight **only the core informational, educational, or narrative content**.
+
+---
+
+2. **Summary**  
+   - Write a **concise and professional** summary of the video's **core content**, structured by **themes or topics**, not by time.
+   - Use **formal, factual, and objective language**.
+   - Do **not** reference the video itself or its structure (e.g., "the video explains..." or "in the beginning...").
+   - Include all essential information, avoiding filler or repetition.
+
+---
+
+3. **Keywords**  
+   - Extract **1 to 3 high-value keywords** that best represent the core themes or topics of the video.
+   - Use lowercase unless the keyword is a proper noun.
+
+---
+
+4. **Language Compliance**  
+   - All content (outline, summary, keywords) must be written in the specified **output language: {language}**.
+   - The structure and field names in the JSON must remain in **English**.
+
+---
+
+Return your result in the following JSON structure **only** — without any additional commentary or text:
+
+```json
+{
+  "outline": [
+    { "timestamp": "HH:MM:SS", "topic": "Brief description of the section" }
+  ],
+  "summary": "Comprehensive summary of the video content. Use professional tone and concise language. Cover all key points accurately.",
+  "keywords": ["keyword1", "keyword2", "keyword3"],
+  "language": "Language used in the content above"
+}
     """,
     llm_config={"config_list": config_list}
 )
@@ -131,6 +151,80 @@ user_proxy = AssistantAgent(
     #     # Keep any other code_execution_config settings you have
     # }
 )
+
+def format_summary_prompt(video_title, video_description, formatted_captions_text, language):
+    """
+    Format the prompt for video summarization.
+    
+    Args:
+        video_title (str): The title of the video
+        video_description (str): The description of the video
+        formatted_captions_text (str): The formatted captions text
+        language (str): The target language for the summary
+        
+    Returns:
+        str: The formatted prompt message
+    """
+    # Input validation
+    if not video_title or not isinstance(video_title, str):
+        video_title = "No title available"
+    if not video_description or not isinstance(video_description, str):
+        video_description = "No description available"
+    if not formatted_captions_text or not isinstance(formatted_captions_text, str):
+        raise ValueError("Captions text is required")
+    if not language or not isinstance(language, str):
+        raise ValueError("Target language is required")
+        
+    # Truncate long inputs if necessary
+    max_title_length = 200
+    max_description_length = 1000
+    max_captions_length = 100000
+    
+    video_title = video_title[:max_title_length]
+    video_description = video_description[:max_description_length]
+    formatted_captions_text = formatted_captions_text[:max_captions_length]
+    
+    # Define the JSON structure template
+    json_structure = '''{
+  "outline": [
+    { "timestamp": "HH:MM:SS", "topic": "Brief description of the section" }
+  ],
+  "summary": "Comprehensive summary of the video content. Use professional and concise language. Cover all key points accurately.",
+  "keywords": ["keyword1", "keyword2", "keyword3", "..."],
+  "language": "Actual language used in the summary above"
+}'''
+
+    # Format the complete message
+    message = f"""
+You are tasked with summarizing a YouTube video using the transcript captions provided below.
+
+VIDEO TITLE:
+{video_title}
+
+VIDEO DESCRIPTION:
+{video_description}
+
+CAPTIONS:
+{formatted_captions_text}
+
+OUTPUT CONTENT LANGUAGE:
+{language}
+
+Instructions:
+- Generate the summary content in the specified language: **{language}**.
+- Follow the JSON output format strictly as described below.
+- Do **not** introduce any content not derived from the captions.
+- Maintain a **professional tone**, use **concise and accurate language**, and **do not omit important details**.
+- The **structure, field names, and formatting must be strictly followed**.
+- Do **not** include any introductory or trailing text—**only the JSON object** is expected in your final output.
+
+Return your result using the following JSON structure:
+
+```json
+{json_structure}
+```
+"""
+    return message
 
 def summarize_youtube_video(
     video_title: str,
@@ -169,39 +263,7 @@ def summarize_youtube_video(
     formatted_captions_text = "\n".join(formatted_captions)
     
     # Create the initial message with all the video data
-    message = f"""
-    I need to summarize the following YouTube video:
-    
-    TITLE: {video_title}
-    
-    DESCRIPTION: {video_description}
-    
-    CAPTIONS:
-    {formatted_captions_text}
-
-    OUTPUT CONTENT LANGUAGE:
-    {language}
-
-    Return the results in the JSON format specified in the system message instructions.
-    The generated content should be in language of {language}
-
-    Important:
-    You must strictly follow the system message instructions.
-    Do not introduce any content or phrasing that is not aligned with the system message.
-    Adhere exactly to the style, tone, structure, and restrictions specified.
-    Treat the system message as an absolute rule.
-    the output language should be in language of {language}, except the structure and format requested in system message instructions.
-    
-    Return your response as a JSON with the following structure:
-    {{
-        "outline": [
-            {{"timestamp": "HH:MM:SS", "topic": "Brief description"}}
-        ],
-        "summary": "Comprehensive summary of the video, use a professional tone and concise language, don't omit important detail.",
-        "keywords": ["keyword1", "keyword2", "keyword3", ...],
-        "language" : "language of generated content"
-    }}
-    """
+    message = format_summary_prompt(video_title, video_description, formatted_captions_text, language)
     
     # Start the conversation
     user_proxy.initiate_chat(
@@ -241,6 +303,7 @@ def summarize_youtube_video(
         result = json.loads(json_str)
         return result
     except json.JSONDecodeError:
+        print("error happened when call llm", file=sys.stderr)
         # Clean up the string and try again
         json_str = re.sub(r'\\n', '\n', json_str)
         json_str = re.sub(r'\\', '', json_str)
