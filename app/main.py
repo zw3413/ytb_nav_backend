@@ -76,8 +76,8 @@ async def summary_mock():
         "video_summary": [
             {
                 "outline": [
-                    {"timestamp": "00:00:02", "description": "在MIT的研究设施中..."},
-                    {"timestamp": "00:01:25", "description": "Ben Armstrong讨论..."},
+                    {"timestamp": "00:00:02", "topic": "在MIT的研究设施中..."},
+                    {"timestamp": "00:01:25", "topic": "Ben Armstrong讨论..."},
                     # ... 其他段落省略，可继续补全
                 ],
                 "summary": "MIT的研究设施中，工程师正在训练机器人以完成各种基本任务...",

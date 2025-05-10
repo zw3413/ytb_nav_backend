@@ -108,9 +108,9 @@ summarizer_assistant = AssistantAgent(
     Return your response as a JSON with the following structure:
     {
         "outline": [
-            {"timestamp": "HH:MM:SS", "description": "Brief description"}
+            {"timestamp": "HH:MM:SS", "topic": "Brief description"}
         ],
-        "summary": "Comprehensive summary of the video, use a ",
+        "summary": "Comprehensive summary of the video, use a professional tone and concise language, don't omit important detail.",
         "keywords": ["keyword1", "keyword2", "keyword3", ...],
         "language" : "language of generated content"
     }
@@ -195,9 +195,9 @@ def summarize_youtube_video(
     Return your response as a JSON with the following structure:
     {{
         "outline": [
-            {{"timestamp": "HH:MM:SS", "description": "Brief description"}}
+            {{"timestamp": "HH:MM:SS", "topic": "Brief description"}}
         ],
-        "summary": "Comprehensive summary of the video, use a ",
+        "summary": "Comprehensive summary of the video, use a professional tone and concise language, don't omit important detail.",
         "keywords": ["keyword1", "keyword2", "keyword3", ...],
         "language" : "language of generated content"
     }}
@@ -284,7 +284,7 @@ Now let's talk about quantum algorithms and how they differ from classical compu
     
     print("OUTLINE WITH TIMESTAMPS:", file=sys.stderr)
     for item in summary_result["outline"]:
-        print(f"[{item['timestamp']}] {item['section']}: {item['description']}", file=sys.stderr)
+        print(f"[{item['timestamp']}] {item['section']}: {item['topic']}", file=sys.stderr)
     
     print("\nSUMMARY:", file=sys.stderr)
     print(summary_result["summary"], file=sys.stderr)

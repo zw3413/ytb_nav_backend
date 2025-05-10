@@ -33,7 +33,7 @@ async def get_video_summary(video_url : str) ->json:
 
             video_summary:{   
                 "outline": [
-                    {"timestamp": "HH:MM:SS", "description": "Brief description"}
+                    {"timestamp": "HH:MM:SS", "topic": "Brief description"}
                 ],
                 "summary": "Comprehensive summary of the video, use a ",
                 "keywords": ["keyword1", "keyword2", "keyword3", ...]
@@ -84,7 +84,7 @@ async def test():
     print("OUTLINE WITH TIMESTAMPS:")
     for summary in summary_result["video_summary"] :
         for item in summary["outline"]:
-            print(f"[{item['timestamp']}]  {item['description']}")
+            print(f"[{item['timestamp']}]  {item['topic']}")
         
         print("\nSUMMARY:")
         print(summary["summary"])
