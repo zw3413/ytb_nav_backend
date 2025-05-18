@@ -83,7 +83,6 @@ pillow==11.2.1
 playwright==1.51.0
 propcache==0.3.1
 proto-plus==1.26.1
-protobuf==6.30.2
 psycopg==3.2.6
 puremagic==1.28
 pyasn1==0.6.1
