@@ -6,6 +6,11 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    git \
+    ffmpeg \
+    python3-dev \
+    libssl-dev \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # 安装 uv
@@ -23,8 +28,10 @@ RUN uv venv && \
     uv pip install numpy==1.24.3 && \
     uv pip install -r requirements.txt && \
     uv pip install "autogen[openai]" && \
-    # 安装 yt-dlp nightly 版本
-    uv pip install --pre -U "yt-dlp[default]" && \
+    # 安装 yt-dlp nightly 版本及其依赖
+    uv pip uninstall -y yt-dlp && \
+    uv pip install --no-cache-dir --pre -U "yt-dlp[default]" && \
+    uv pip install --upgrade "cryptography" && \
     # 更新 requirements.txt
     uv pip freeze > requirements.txt && \
     # 生成 requirements.lock
@@ -32,6 +39,8 @@ RUN uv venv && \
 
 # 设置环境变量
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 # 暴露端口
 EXPOSE 8000
