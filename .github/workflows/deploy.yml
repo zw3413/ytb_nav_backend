@@ -5,6 +5,12 @@ on:
     branches: [ main ]
   workflow_dispatch:  # 允许手动触发
 
+# 添加权限配置
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 env:
   PYTHON_VERSION: '3.11'
   SERVER_DIR: '/opt/ytb_nav'
@@ -83,6 +89,7 @@ jobs:
       if: failure()
       uses: actions/github-script@v6
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           github.rest.issues.create({
             owner: context.repo.owner,
