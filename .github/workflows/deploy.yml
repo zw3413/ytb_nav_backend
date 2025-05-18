@@ -60,19 +60,20 @@ jobs:
         script: |
           # 安装必要的系统包
           echo "Installing system packages..."
-          if command -v yum &> /dev/null; then
-            sudo yum update -y
-            sudo yum install -y python3 git curl
-          elif command -v dnf &> /dev/null; then
-            sudo dnf update -y
-            sudo dnf install -y python3 git curl
-          elif command -v pacman &> /dev/null; then
-            sudo pacman -Syu --noconfirm
-            sudo pacman -S --noconfirm python git curl
-          else
-            echo "Unsupported package manager"
-            exit 1
-          fi
+          sudo yum update -y
+          sudo yum install -y git curl
+          
+          # 安装 Python 3.11
+          echo "Installing Python 3.11..."
+          sudo yum install -y gcc openssl-devel bzip2-devel libffi-devel
+          cd /opt
+          sudo wget https://www.python.org/ftp/python/3.11.8/Python-3.11.8.tgz
+          sudo tar xzf Python-3.11.8.tgz
+          cd Python-3.11.8
+          sudo ./configure --enable-optimizations
+          sudo make altinstall
+          sudo rm -f /opt/Python-3.11.8.tgz
+          sudo rm -rf /opt/Python-3.11.8
           
           # 安装 uv
           echo "Installing uv..."
@@ -89,7 +90,7 @@ jobs:
           echo "Cloning repository..."
           cd ${{ env.SERVER_DIR }}
           if [ ! -d ".git" ]; then
-            git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
+            git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
           fi
           
           # 创建备份
@@ -108,13 +109,13 @@ jobs:
           # 设置 Python 环境
           echo "Setting up Python environment..."
           if [ ! -d ".venv" ]; then
-            uv venv
+            python3.11 -m venv .venv
           fi
           source .venv/bin/activate
           
           # 更新依赖
           echo "Updating dependencies..."
-          uv pip install -r requirements.txt
+          pip install -r requirements.txt
           
           # 创建 systemd 服务
           echo "Creating systemd service..."
