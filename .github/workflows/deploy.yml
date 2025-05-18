@@ -46,7 +46,7 @@ jobs:
         # 安装所有依赖
         uv pip install numpy==1.24.3  # 使用较低版本的 numpy
         uv pip install -r requirements.txt
-        uv pip install pyautogen  # 安装 autogen
+        uv pip install "autogen[openai]"  # 安装 autogen 及其 OpenAI 依赖
         # 更新 requirements.txt
         uv pip freeze > requirements.txt
         # 生成 requirements.lock
@@ -119,7 +119,7 @@ jobs:
           # 安装所有依赖
           uv pip install numpy==1.24.3  # 使用较低版本的 numpy
           uv pip install -r requirements.txt
-          uv pip install pyautogen  # 安装 autogen
+          uv pip install "autogen[openai]"  # 安装 autogen 及其 OpenAI 依赖
           # 更新 requirements.txt
           uv pip freeze > requirements.txt
           # 生成 requirements.lock
