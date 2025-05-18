@@ -44,7 +44,7 @@ jobs:
       run: |
         source .venv/bin/activate
         # 安装所有依赖
-        uv pip install -r requirements.txt
+        uv pip install --only-binary=:all: -r requirements.txt
         # 更新 requirements.txt
         uv pip freeze > requirements.txt
         # 生成 requirements.lock
@@ -67,8 +67,7 @@ jobs:
           # 安装必要的系统包
           echo "Installing system packages..."
           sudo yum update -y
-          sudo yum groupinstall -y "Development Tools"
-          sudo yum install -y git curl gcc gcc-c++ make
+          sudo yum install -y git curl
           
           # 安装 uv
           echo "Installing uv..."
@@ -115,8 +114,8 @@ jobs:
           
           # 更新依赖
           echo "Updating dependencies..."
-          # 安装所有依赖
-          uv pip install -r requirements.txt
+          # 安装所有依赖，使用预编译的二进制包
+          uv pip install --only-binary=:all: -r requirements.txt
           # 更新 requirements.txt
           uv pip freeze > requirements.txt
           # 生成 requirements.lock
