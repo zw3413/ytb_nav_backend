@@ -58,27 +58,78 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
+          # 安装必要的系统包
+          echo "Installing system packages..."
+          sudo apt-get update
+          sudo apt-get install -y python3.11 python3.11-venv git curl
+          
+          # 安装 uv
+          echo "Installing uv..."
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+          source ~/.bashrc
+          
+          # 创建项目目录
+          echo "Creating project directory..."
+          sudo mkdir -p ${{ env.SERVER_DIR }}
+          sudo chown $USER:$USER ${{ env.SERVER_DIR }}
+          
+          # 初始化 git 仓库
+          echo "Initializing git repository..."
+          cd ${{ env.SERVER_DIR }}
+          if [ ! -d ".git" ]; then
+            git init
+            git remote add origin https://github.com/${{ github.repository }}.git
+          fi
+          
           # 创建备份
           echo "Creating backup..."
           if [ -d "${{ env.SERVER_DIR }}" ]; then
             backup_dir="/opt/ytb_nav_backup/$(date +%Y%m%d_%H%M%S)"
             sudo mkdir -p $backup_dir
-            sudo cp -r ${{ env.SERVER_DIR }}/* $backup_dir/
+            sudo cp -r ${{ env.SERVER_DIR }}/* $backup_dir/ 2>/dev/null || true
           fi
           
           # 更新代码
           echo "Updating code..."
-          cd ${{ env.SERVER_DIR }}
           git fetch origin
           git reset --hard origin/main
           
+          # 设置 Python 环境
+          echo "Setting up Python environment..."
+          if [ ! -d ".venv" ]; then
+            uv venv
+          fi
+          source .venv/bin/activate
+          
           # 更新依赖
           echo "Updating dependencies..."
-          source .venv/bin/activate
           uv pip sync requirements.lock
           
-          # 重启服务
-          echo "Restarting service..."
+          # 创建 systemd 服务
+          echo "Creating systemd service..."
+          sudo tee /etc/systemd/system/ytb_nav.service << EOF
+          [Unit]
+          Description=YTB Navigation Service
+          After=network.target redis.service
+          
+          [Service]
+          User=$USER
+          WorkingDirectory=${{ env.SERVER_DIR }}
+          Environment="PATH=${{ env.SERVER_DIR }}/.venv/bin"
+          ExecStart=${{ env.SERVER_DIR }}/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+          Restart=always
+          
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+          
+          # 重新加载 systemd 配置
+          sudo systemctl daemon-reload
+          
+          # 启动服务
+          echo "Starting service..."
+          sudo systemctl enable ytb_nav
           sudo systemctl restart ytb_nav
           
           # 等待服务启动
