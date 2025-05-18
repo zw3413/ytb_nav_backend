@@ -43,8 +43,14 @@ jobs:
     - name: Install dependencies
       run: |
         source .venv/bin/activate
-        uv pip sync requirements.lock
-        uv pip install pytest pytest-cov  # 安装测试依赖
+        # 安装所有依赖
+        uv pip install -r requirements.txt
+        # 更新 requirements.txt
+        uv pip freeze > requirements.txt
+        # 生成 requirements.lock
+        uv pip compile requirements.txt -o requirements.lock
+        # 安装测试依赖
+        uv pip install pytest pytest-cov
         
     - name: Run tests
       run: |
@@ -108,8 +114,12 @@ jobs:
           
           # 更新依赖
           echo "Updating dependencies..."
-          uv pip sync requirements.lock
-          uv pip install yt-dlp  # 安装 yt-dlp
+          # 安装所有依赖
+          uv pip install -r requirements.txt
+          # 更新 requirements.txt
+          uv pip freeze > requirements.txt
+          # 生成 requirements.lock
+          uv pip compile requirements.txt -o requirements.lock
           
           # 创建 systemd 服务
           echo "Creating systemd service..."
