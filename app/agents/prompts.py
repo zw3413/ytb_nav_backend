@@ -10,7 +10,7 @@ Your task is to analyze the provided video information — including the title, 
 
 1. **Outline with Timestamps**  
    - Identify the **main sections and key ideas** of the video.
-   - Each item must include a "timestamp" in "HH:MM:SS" format and a brief "topic" description, Topics must be concise (max 100 characters)
+   - Each item must include a "timestamp" in "HH:MM:SS" format and a brief "topic" description. The topic must be written entirely in the output language ({language}) and must be concise (max 100 characters).
    - **Summarize content blocks**, not individual sentences.
    - Target **5 to 15 items**; do **not exceed 20**.
    - **Exclude** all introductory remarks, greetings, audience engagement (e.g., likes/subscribes), sponsor mentions, and closing summaries.
@@ -124,7 +124,7 @@ OUTPUT CONTENT LANGUAGE:
 {language}
 
 Instructions:
-- Generate the summary content in the specified language: **{language}**.
+- Generate the entire summary content in the specified language: **{language}**, including all outline topics.
 - Follow the JSON output format strictly as described in the system message.
 - Do **not** introduce any content not derived from the captions.
 - Maintain a **professional tone**, use **concise and accurate language**, and **do not omit important details**.
