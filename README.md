@@ -1,34 +1,95 @@
-## 数据生产(DataTool)
+# YouTube Data Tool
 
-数据生产，调度任务，抓取youtube视频信息，生成字幕， 处理数据生成总结、大纲、关键词等
+一个基于FastAPI的YouTube数据分析工具，提供视频信息获取、摘要生成等功能。
 
-- 数据生产(DataTool)
-  -- 维护一个youtube视频频道列表，分为系统频道列表和用户频道列表
-  -- 检查频道列表中频道的最新未处理视频，抓取其字幕、简介、评论，对于没有字幕的视频，使用whisper等功能生成带有时间戳的字幕，将这些信息存入数据库待后续处理
-  -- 检查数据库中待处理的视频，生成总结、带有时间戳的大纲、关键词。 系统定时更新所有视频的播放量数据，定视更新所有频道的订阅量数据，定视更新评论数据。
-  -- 支持使用youtube api自动将带有时间戳的大纲评论到视频评论区
+## 功能特点
 
+- 获取YouTube视频详细信息
+- 生成视频内容摘要
+- 获取频道信息
+- RESTful API接口
+- 异步处理支持
+- 完整的API文档
 
-### 具体实现
+## 技术栈
 
-  - Scheduler 是任务调度器，连接数据库，协调整个pipeline的运行顺序。
-    -- 定期调用YoutubeFetcher，检查指定频道过去指定时间段内的新视频，获取其信息，存入video及相应表， 对于没有获取到字幕的视频触发第二项，
-    -- 调用STT来生成字幕文件，存入字幕表
-    -- 定时调用DataProcesser来生成相应数据
-    -- 对于指定推送大纲的频道，调用YoutubeFetcher功能将大纲推送至评论区
+- FastAPI
+- Pydantic
+- Google YouTube API
+- Redis
+- PostgreSQL
 
-  - YoutubeFetcher 提供封装好的下载youtube视频的函数，供scheduler调用，
-    -- 跟据youtube频道，检索指定时间段内的新视频，抓取视频元数据，包含：视频链接、标题、简介、字幕...
-    -- 将大纲推送到视频的评论区
+## 快速开始
 
-  - STT 提供whisper功能，
-    -- 跟据指定的youtube video连接，下载视频，并使用whisper等工具生成带有时间戳的字幕，返回给scheduler
-  
-  - DataProcesser 由Scheduler调用，
-    -- 输入为下载到的字幕（或者转译出来的字幕）、简介等生成视频总结、大纲、关键词等。
-    
+1. 克隆项目
+```bash
+git clone https://github.com/yourusername/youtube-data-tool.git
+cd youtube-data-tool
+```
 
-# 执行
+2. 创建虚拟环境
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# 或
+.venv\Scripts\activate  # Windows
+```
 
-## 以http模式启动MCP server
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+3. 安装依赖
+```bash
+pip install -r requirements.txt
+```
+
+4. 配置环境变量
+```bash
+cp .env.example .env
+# 编辑.env文件，填入必要的配置信息
+```
+
+5. 运行服务
+```bash
+uvicorn app.main:app --reload
+```
+
+## API文档
+
+启动服务后，访问以下地址查看API文档：
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+## 项目结构
+
+```
+app/
+├── api/
+│   └── endpoints/
+│       └── youtube.py
+├── core/
+│   └── config.py
+├── models/
+│   └── youtube.py
+├── services/
+│   └── youtube_service.py
+├── utils/
+└── main.py
+```
+
+## 开发指南
+
+1. 代码风格遵循PEP 8规范
+2. 使用类型注解
+3. 编写单元测试
+4. 保持文档更新
+
+## 贡献指南
+
+1. Fork项目
+2. 创建特性分支
+3. 提交更改
+4. 推送到分支
+5. 创建Pull Request
+
+## 许可证
+
+MIT

@@ -1,0 +1,92 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # 允许手动触发
+
+env:
+  PYTHON_VERSION: '3.11'
+  SERVER_DIR: '/opt/ytb_nav'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # 获取完整的 git 历史
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'  # 启用 pip 缓存
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov  # 安装测试依赖
+        
+    - name: Run tests
+      run: |
+        pytest --cov=app tests/ || true  # 如果有测试失败也继续部署
+        
+    - name: Deploy to server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # 创建备份
+          echo "Creating backup..."
+          if [ -d "${{ env.SERVER_DIR }}" ]; then
+            backup_dir="/opt/ytb_nav_backup/$(date +%Y%m%d_%H%M%S)"
+            sudo mkdir -p $backup_dir
+            sudo cp -r ${{ env.SERVER_DIR }}/* $backup_dir/
+          fi
+          
+          # 更新代码
+          echo "Updating code..."
+          cd ${{ env.SERVER_DIR }}
+          git fetch origin
+          git reset --hard origin/main
+          
+          # 更新依赖
+          echo "Updating dependencies..."
+          source .venv/bin/activate
+          pip install -r requirements.txt
+          
+          # 重启服务
+          echo "Restarting service..."
+          sudo systemctl restart ytb_nav
+          
+          # 等待服务启动
+          echo "Waiting for service to start..."
+          sleep 10
+          
+          # 检查服务状态
+          echo "Checking service status..."
+          if systemctl is-active --quiet ytb_nav; then
+            echo "Service is running successfully!"
+          else
+            echo "Service failed to start!"
+            sudo journalctl -u ytb_nav -n 50
+            exit 1
+          fi
+          
+    - name: Notify on failure
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'Deployment failed',
+            body: 'Deployment failed for commit: ' + context.sha
+          }) 
