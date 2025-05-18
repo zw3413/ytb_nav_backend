@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     DEBUG: bool
     
     class Config:
-        env_file = ".env"
+        env_file = "/app/.env"
         case_sensitive = True
 
 def get_settings() -> Settings:
