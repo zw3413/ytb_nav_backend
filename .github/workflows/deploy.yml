@@ -67,7 +67,8 @@ jobs:
           # 安装必要的系统包
           echo "Installing system packages..."
           sudo yum update -y
-          sudo yum install -y git curl
+          sudo yum groupinstall -y "Development Tools"
+          sudo yum install -y git curl gcc gcc-c++ make
           
           # 安装 uv
           echo "Installing uv..."
