@@ -4,11 +4,38 @@ import contextlib
 import io
 from app.utils.StderrLogger import StderrLogger
 import sys
+import os
+from pathlib import Path
 
 
 class VideoInfoError(Exception):
     """视频信息获取相关的异常"""
     pass
+
+
+def get_cookies_path() -> Optional[str]:
+    """获取 cookies 文件路径。
+    
+    Returns:
+        Optional[str]: cookies 文件路径，如果不存在则返回 None
+    """
+    # 首先检查环境变量
+    cookies_path = os.getenv('YOUTUBE_COOKIES_PATH')
+    if cookies_path and os.path.exists(cookies_path):
+        return cookies_path
+        
+    # 然后检查默认位置
+    default_paths = [
+        os.path.expanduser('~/.config/yt-dlp/cookies.txt'),
+        os.path.expanduser('~/.local/share/yt-dlp/cookies.txt'),
+        '/opt/ytb_nav/cookies.txt'
+    ]
+    
+    for path in default_paths:
+        if os.path.exists(path):
+            return path
+            
+    return None
 
 
 def get_video_info(url: str) -> Optional[Dict[str, Any]]:
@@ -24,6 +51,9 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
         VideoInfoError: 当视频信息获取失败时抛出
     """
     try:
+        # 获取 cookies 路径
+        cookies_path = get_cookies_path()
+        
         # 配置yt-dlp选项
         ydl_opts = {
             'skip_download': True,  # 不下载视频
@@ -35,6 +65,10 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
             'extract_flat': False,     # 获取完整信息
             'ignoreerrors': False,     # 不忽略错误
         }
+        
+        # 如果存在 cookies 文件，添加到选项中
+        if cookies_path:
+            ydl_opts['cookiefile'] = cookies_path
         
         # 使用yt-dlp获取视频信息
         with contextlib.redirect_stdout(io.StringIO()):
