@@ -61,19 +61,8 @@ jobs:
           # 安装必要的系统包
           echo "Installing system packages..."
           sudo yum update -y
-          sudo yum install -y git curl
-          
-          # 安装 Python 3.11
-          echo "Installing Python 3.11..."
-          sudo yum install -y gcc openssl-devel bzip2-devel libffi-devel
-          cd /opt
-          sudo wget https://www.python.org/ftp/python/3.11.8/Python-3.11.8.tgz
-          sudo tar xzf Python-3.11.8.tgz
-          cd Python-3.11.8
-          sudo ./configure --enable-optimizations
-          sudo make altinstall
-          sudo rm -f /opt/Python-3.11.8.tgz
-          sudo rm -rf /opt/Python-3.11.8
+          sudo yum install -y epel-release
+          sudo yum install -y git curl python3.11 python3.11-pip
           
           # 安装 uv
           echo "Installing uv..."
