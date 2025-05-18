@@ -61,8 +61,7 @@ jobs:
           # 安装必要的系统包
           echo "Installing system packages..."
           sudo yum update -y
-          sudo yum install -y epel-release
-          sudo yum install -y git curl python3.11 python3.11-pip
+          sudo yum install -y git curl
           
           # 安装 uv
           echo "Installing uv..."
@@ -98,13 +97,13 @@ jobs:
           # 设置 Python 环境
           echo "Setting up Python environment..."
           if [ ! -d ".venv" ]; then
-            python3.11 -m venv .venv
+            uv venv
           fi
           source .venv/bin/activate
           
           # 更新依赖
           echo "Updating dependencies..."
-          pip install -r requirements.txt
+          uv pip sync requirements.lock
           
           # 创建 systemd 服务
           echo "Creating systemd service..."
