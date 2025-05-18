@@ -72,6 +72,8 @@ beautifulsoup4==4.13.4
     #   -r requirements.txt
     #   markdownify
     #   markitdown
+brotli==1.1.0
+    # via -r requirements.txt
 cachetools==5.5.2
     # via
     #   -r requirements.txt
@@ -288,6 +290,8 @@ multidict==6.4.3
     #   -r requirements.txt
     #   aiohttp
     #   yarl
+mutagen==1.47.0
+    # via -r requirements.txt
 numpy==1.26.4
     # via
     #   -r requirements.txt
@@ -344,6 +348,7 @@ proto-plus==1.26.1
     #   google-api-core
 protobuf==5.29.4
     # via
+    #   -r requirements.txt
     #   autogen-core
     #   google-api-core
     #   googleapis-common-protos
@@ -371,6 +376,8 @@ pycparser==2.22
     # via
     #   -r requirements.txt
     #   cffi
+pycryptodomex==3.23.0
+    # via -r requirements.txt
 pydantic==2.11.4
     # via
     #   -r requirements.txt
@@ -571,7 +578,9 @@ uvicorn==0.34.2
     #   fastapi-cli
     #   mcp
 uvloop==0.21.0
-    # via uvicorn
+    # via
+    #   -r requirements.txt
+    #   uvicorn
 watchfiles==1.0.5
     # via
     #   -r requirements.txt
@@ -602,7 +611,7 @@ youtube-transcript-api==1.0.3
     # via
     #   -r requirements.txt
     #   markitdown
-yt-dlp==2025.3.31
+yt-dlp==2025.5.17.232915.dev0
     # via -r requirements.txt
 zipp==3.21.0
     # via
