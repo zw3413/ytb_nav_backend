@@ -109,6 +109,7 @@ jobs:
           # 更新依赖
           echo "Updating dependencies..."
           uv pip sync requirements.lock
+          uv pip install yt-dlp  # 安装 yt-dlp
           
           # 创建 systemd 服务
           echo "Creating systemd service..."
