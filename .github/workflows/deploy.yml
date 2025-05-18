@@ -60,13 +60,24 @@ jobs:
         script: |
           # 安装必要的系统包
           echo "Installing system packages..."
-          sudo apt-get update
-          sudo apt-get install -y python3.11 python3.11-venv git curl
+          if command -v yum &> /dev/null; then
+            sudo yum update -y
+            sudo yum install -y python3 git curl
+          elif command -v dnf &> /dev/null; then
+            sudo dnf update -y
+            sudo dnf install -y python3 git curl
+          elif command -v pacman &> /dev/null; then
+            sudo pacman -Syu --noconfirm
+            sudo pacman -S --noconfirm python git curl
+          else
+            echo "Unsupported package manager"
+            exit 1
+          fi
           
           # 安装 uv
           echo "Installing uv..."
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+          echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
           source ~/.bashrc
           
           # 创建项目目录
@@ -74,12 +85,11 @@ jobs:
           sudo mkdir -p ${{ env.SERVER_DIR }}
           sudo chown $USER:$USER ${{ env.SERVER_DIR }}
           
-          # 初始化 git 仓库
-          echo "Initializing git repository..."
+          # 克隆代码
+          echo "Cloning repository..."
           cd ${{ env.SERVER_DIR }}
           if [ ! -d ".git" ]; then
-            git init
-            git remote add origin https://github.com/${{ github.repository }}.git
+            git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
           fi
           
           # 创建备份
@@ -104,7 +114,7 @@ jobs:
           
           # 更新依赖
           echo "Updating dependencies..."
-          uv pip sync requirements.lock
+          uv pip install -r requirements.txt
           
           # 创建 systemd 服务
           echo "Creating systemd service..."
