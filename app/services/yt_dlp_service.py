@@ -5,7 +5,7 @@ import requests
 import logging
 import time
 from fastapi import HTTPException
-from app.utils.yt_dlp_utils import get_video_info
+from app.utils.yt_dlp_utils import get_video_info, get_cookies_path
 from app.models.youtube import YoutubeVideoInfo
 from app.agents.yt_dlp_summarizer import summarize_youtube_video
 
@@ -105,24 +105,61 @@ def download_text(url: str, max_retries: int = 2) -> Optional[str]:
 
     Args:
         url: 要下载的URL
-        max_retries: 最大重试次数，默认为1次
+        max_retries: 最大重试次数，默认为2次
 
     Returns:
         Optional[str]: 下载的文本内容，如果下载失败则返回None
     """
+    # 设置请求头，模拟浏览器
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'max-age=0'
+    }
+
+    # 获取 cookies 文件路径
+    cookies_path = get_cookies_path()
+    cookies = None
+    if cookies_path:
+        try:
+            import http.cookiejar
+            cookie_jar = http.cookiejar.MozillaCookieJar(cookies_path)
+            cookie_jar.load(ignore_discard=True, ignore_expires=True)
+            cookies = cookie_jar
+        except Exception as e:
+            logger.warning(f"Failed to load cookies from {cookies_path}: {e}")
+
     for attempt in range(max_retries + 1):
         try:
             logger.info(f"Attempting to download text from URL: {url}")
-            response = requests.get(url, timeout=60)
+            response = requests.get(
+                url,
+                headers=headers,
+                cookies=cookies,
+                timeout=60,
+                allow_redirects=True
+            )
             response.raise_for_status()
+            
             if not response.text:
-                raise SubtitleError("Failed to downloaded text content.")
+                raise SubtitleError("Failed to download text content.")
+                
             logger.info("Successfully downloaded text content")
             return response.text
+            
         except requests.RequestException as e:
             if attempt < max_retries:
-                logger.warning(f"Attempt {attempt + 1} failed, retrying... Error: {e}")
-                time.sleep(0.5)  # 等待200ms后重试
+                wait_time = (attempt + 1) * 2  # 指数退避
+                logger.warning(f"Attempt {attempt + 1} failed, retrying in {wait_time}s... Error: {e}")
+                time.sleep(wait_time)
                 continue
             logger.error(f"Error downloading {url} after {max_retries + 1} attempts: {e}")
             return None
