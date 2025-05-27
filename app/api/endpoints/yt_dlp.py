@@ -1,4 +1,4 @@
-from app.services.yt_dlp_service import get_video_summary, SubtitleError
+from app.services.yt_dlp_service import get_video_summary_service, SubtitleError, get_video_info_service
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
 import traceback
@@ -23,16 +23,43 @@ os.environ["PYTHONUNBUFFERED"] = "1"
 router = APIRouter()
 
 
+class SummaryRequest(BaseModel):
+    video_id: str
 class VideoRequest(BaseModel):
     video_url: str
 
-@router.post("/summary")
-async def summary_post(request: VideoRequest):
-    logger.info(f"Processing video URL: {request.video_url}")
 
+@router.post("/videoinfo")
+async def video_info(request: VideoRequest):
+    logger.info(f"Get video info via video URL: {request.video_url}")
     try:
-        data = await get_video_summary(request.video_url)
-        if not data.get("video_summary") or len(data["video_summary"]) == 0:
+        video_info = await get_video_info_service(request.video_url)
+        return {
+            "msg":"",
+            "code":"000",
+            "data":video_info
+        }
+    except Exception as e:
+        # 获取完整的错误堆栈
+        error_traceback = traceback.format_exc()
+        logger.error(f"Error processing video: {str(e)}\nTraceback:\n{error_traceback}")
+        
+        # 打印错误到stderr
+        print(f"Error processing video: {str(e)}", file=sys.stderr)
+        print(f"Traceback:\n{error_traceback}", file=sys.stderr)
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error get video info {str(e)}\nTraceback:\n{error_traceback}"
+        )
+    
+
+@router.post("/summary")
+async def summary_post(request: SummaryRequest):
+    logger.info(f"Processing video ID: {request.video_id}")
+    try:
+        data = await get_video_summary_service(request.video_id)
+        if not data or len(data) == 0:
             return {
                 "msg": "No video summary",
                 "code": "003",

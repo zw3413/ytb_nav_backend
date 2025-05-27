@@ -18,7 +18,7 @@ class YoutubeVideoInfo(BaseModel):
     webpage_url: str
     categories: List[str]
     tags: List[str]
-    comment_count: int
+    comment_count: Optional[int] = None
     chapters: Optional[List[Any]] = None
     heatmap: Optional[List[Any]] = None
     like_count: int

@@ -10,13 +10,17 @@ Your task is to analyze the provided video information — including the title, 
 
 1. **Outline with Timestamps**  
    - Identify the **main sections and key ideas** of the video.
-   - Each item must include a "timestamp" in "HH:MM:SS" format and a brief "topic" description. The topic must be written entirely in the output language ({language}) and must be concise (max 100 characters).
-   - **Summarize content blocks**, not individual sentences.
+   - Each item must include a "timestamp" in "HH:MM:SS" format and a "topic" field.
+   - The "topic" should **summarize the content covered during that time segment in a clear and specific way**.
+   - The topic must be **written entirely in {language}**, using **descriptive phrases or short sentences**, rather than vague or generic terms.
+   - Avoid using labels such as "Introduction", "Q&A", "Conclusion", or one-word topics — instead, **highlight the actual theme or insight discussed**, such as “How neural networks learn from data” or “Economic impacts of climate change”.
+   - The topic must **convey meaningful context** and help the user quickly understand what this section is about, while still being concise.
+   - **Maximum length: 100 characters**.
+   - **Summarize content blocks**, not individual sentences or short exchanges.
    - Target **5 to 15 items**; do **not exceed 20**.
-   - **Exclude** all introductory remarks, greetings, audience engagement (e.g., likes/subscribes), sponsor mentions, and closing summaries.
-   - **Group temporally adjacent or topically related content** under a single outline point when appropriate (especially with the same subject or theme).
-   - The outline must highlight **only the core informational, educational, or narrative content**.
-   - No duplicate timestamps allowed
+   - **Exclude** introductory greetings, sponsor mentions, like/share prompts, or closing thank-you messages.
+   - Group temporally adjacent or topically related content under a single outline point when appropriate.
+
 ---
 
 2. **Summary**  
@@ -48,7 +52,7 @@ Return your result in the following JSON structure **only** — without any addi
 ```json
 {
   "outline": [
-    { "timestamp": "HH:MM:SS", "topic": "Brief description of the section" }
+    { "timestamp": "HH:MM:SS", "topic": "summarization of the section" }
   ],
   "summary": "Comprehensive summary of the video content. Use professional tone and concise language. Cover all key points accurately.",
   "keywords": ["keyword1", "keyword2", "keyword3"],

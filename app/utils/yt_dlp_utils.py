@@ -9,6 +9,7 @@ from pathlib import Path
 import time
 import random
 import logging
+import datetime
 
 # 配置日志
 logging.basicConfig(
@@ -52,7 +53,7 @@ def get_cookies_path() -> Optional[str]:
     return None
 
 
-def get_video_info(url: str) -> Optional[Dict[str, Any]]:
+def get_video_info_utils(url: str) -> Dict[str, Any]:
     """获取YouTube视频的详细信息。
 
     Args:
@@ -160,8 +161,22 @@ def get_video_info(url: str) -> Optional[Dict[str, Any]]:
                 
         if not info:
             raise VideoInfoError("Failed to extract video information")
-            
-        return info
+        
+        # 将info对象转换为普通字典
+        info_dict = {}
+        for key, value in info.items():
+            # 处理特殊类型
+            if isinstance(value, (datetime.datetime, datetime.date)):
+                info_dict[key] = value.isoformat()
+            elif isinstance(value, (list, dict)):
+                info_dict[key] = value
+            elif hasattr(value, '__dict__'):
+                # 处理其他对象类型
+                info_dict[key] = str(value)
+            else:
+                info_dict[key] = value
+                
+        return info_dict
             
     except yt_dlp.utils.DownloadError as e:
         raise VideoInfoError(f"Download error: {str(e)}")

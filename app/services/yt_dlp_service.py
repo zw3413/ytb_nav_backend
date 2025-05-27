@@ -1,13 +1,15 @@
 from typing import Dict, List, Optional, Any, Tuple
 import json
-import sys
+import sys, os
+import redis
 import requests
 import logging
 import time
 from fastapi import HTTPException
-from app.utils.yt_dlp_utils import get_video_info, get_cookies_path
+from app.utils.yt_dlp_utils import get_video_info_utils, get_cookies_path
 from app.models.youtube import YoutubeVideoInfo
 from app.agents.yt_dlp_summarizer import summarize_youtube_video
+from app.config.redis_config import redis_client
 
 # 配置日志
 logging.basicConfig(
@@ -29,12 +31,36 @@ class VideoProcessingError(Exception):
     """视频处理相关的异常"""
     pass
 
+async def get_video_info_service(video_url : str) -> Dict[str, Any]:
+    try:
+        # 获取视频信息
+        info = get_video_info_utils(video_url)
+        if not info:
+            raise VideoProcessingError("Failed to fetch video information")
 
-async def get_video_summary(video_url: str) -> Dict[str, Any]:
+        # 获取字幕URL
+        en_sub_url, cn_sub_url = extract_subtitle_url_for_languages(info)
+        info['cn_subtitle_url'] = cn_sub_url
+        info['en_subtitle_url'] = en_sub_url
+        
+        # 创建视频信息模型
+        video_info = YoutubeVideoInfo.model_validate(info)
+        result = video_info.model_dump()
+
+        #save result into redis, key: video_id, value: result
+        video_id = video_info.id
+        redis_client.hset('video_info', video_id, json.dumps(result))
+
+        return result
+    except Exception as e:
+        logger.error(f"Error when get_video_info_service: {str(e)}",exc_info=True)
+        raise e
+
+async def get_video_summary_service(video_id: str) -> Dict[str, Any]:
     """获取YouTube视频的摘要信息。
 
     Args:
-        video_url: YouTube视频URL，例如 "https://www.youtube.com/watch?v=5F2S2UUACi4"
+        video_id: YouTube视频ID
 
     Returns:
         Dict[str, Any]: 包含视频信息和摘要的字典
@@ -55,22 +81,22 @@ async def get_video_summary(video_url: str) -> Dict[str, Any]:
         HTTPException: 当视频处理失败时抛出
     """
     try:
-        # 获取视频信息
-        info = get_video_info(video_url)
-        if not info:
-            raise VideoProcessingError("Failed to fetch video information")
+        # check if there is a video summary in redis video_summary hset, using the video_id to check, if yes, return it directly.
+        video_summary = redis_client.hget('video_summary', video_id)
+        if video_summary and len(video_summary)>0:
+            return json.loads(video_summary)
 
-        # 获取字幕URL
-        en_sub_url, cn_sub_url = extract_subtitle_url_for_languages(info)
-        info['cn_subtitle_url'] = cn_sub_url
-        info['en_subtitle_url'] = en_sub_url
+
+        # 从Redis获取视频信息
+        video_info_json = redis_client.hget('video_info', video_id)
+        if not video_info_json:
+            raise VideoProcessingError(f"Video info not found in Redis for video_id: {video_id}")
         
-        # 创建视频信息模型
+        info = json.loads(video_info_json)
+        if not info:
+            raise VideoProcessingError("Failed to parse video information from Redis")
+
         video_info = YoutubeVideoInfo(**info)
-        result = {
-            "video_info": video_info.model_dump(),
-            "video_summary": []  # 初始化为空列表
-        }
 
         # 获取字幕内容
         subtitle_url = video_info.cn_subtitle_url or video_info.en_subtitle_url
@@ -84,15 +110,18 @@ async def get_video_summary(video_url: str) -> Dict[str, Any]:
             raise SubtitleError("Failed to download subtitle content")
 
         # 生成视频摘要
-        summary_result = await summarize_youtube_video(
+        summary_result_cn = await summarize_youtube_video(
             video_title=video_info.title,
             video_description=video_info.description,
             video_tags=video_info.tags,
             video_captions=caption_text,
             output_language='Simplified Chinese'
         )
+        result= [summary_result_cn]
         
-        result["video_summary"] = [summary_result]
+        #将result以video_id为key存入 key为video_summary的redis hset中
+        redis_client.hset('video_summary', video_id, json.dumps(result))
+
         return result
 
     except Exception as e:
