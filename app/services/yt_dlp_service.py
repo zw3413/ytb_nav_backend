@@ -8,7 +8,7 @@ import time
 from fastapi import HTTPException
 from app.utils.yt_dlp_utils import get_video_info_utils, get_cookies_path
 from app.models.youtube import YoutubeVideoInfo
-from app.agents.yt_dlp_summarizer import summarize_youtube_video
+from app.agents.openai_summarizer import summarize_youtube_video
 from app.config.redis_config import redis_client
 
 # 配置日志

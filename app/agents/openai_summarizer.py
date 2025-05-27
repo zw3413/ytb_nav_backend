@@ -169,6 +169,7 @@ def parse_vtt(vtt_content: str) -> List[Dict[str, str]]:
         # Split by double newline (each caption block)
         caption_blocks = vtt_content.strip().split("\n\n")
         parsed_captions = []
+        total_length = 0
         
         for block in caption_blocks:
             lines = block.strip().split("\n")
@@ -182,6 +183,8 @@ def parse_vtt(vtt_content: str) -> List[Dict[str, str]]:
             
             # Extract start time
             start_time = timestamp_line.split("-->")[0].strip()
+            # Remove milliseconds
+            start_time = start_time.split(".")[0]
             
             # Get caption text (can be multiline)
             text_lines = lines[1:] if "-->" in lines[0] else lines[2:]
@@ -190,10 +193,20 @@ def parse_vtt(vtt_content: str) -> List[Dict[str, str]]:
             # Clean text:
             text = clean_vtt_text(raw_text)
             
+            # Skip if this text is the same as the previous one
+            if parsed_captions and parsed_captions[-1]["txt"] == text:
+                continue
+            
+            # 计算包含JSON格式的key在内的字符数
+            # caption_length = len('"stime":"' + start_time + '","txt":"' + text + '"')
+            # if total_length + caption_length > 90000:
+            #     break
+                
             parsed_captions.append({
-                "start_time": start_time,
-                "text": text
+                "stime": start_time,
+                "txt": text
             })
+            #total_length += caption_length
         
         return parsed_captions
     except Exception as e:
