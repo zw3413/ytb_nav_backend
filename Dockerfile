@@ -20,9 +20,7 @@ COPY . .
 # 创建虚拟环境并安装依赖
 RUN /root/.local/bin/uv venv && \
     . .venv/bin/activate && \
-    /root/.local/bin/uv pip install -r requirements.txt && \
-    /root/.local/bin/uv pip install "autogen[openai]" && \
-    /root/.local/bin/uv pip install --pre -U "yt-dlp[default]"
+    /root/.local/bin/uv pip sync uv.lock
 
 # 设置环境变量
 ENV PATH="/app/.venv/bin:/root/.local/bin:${PATH}"

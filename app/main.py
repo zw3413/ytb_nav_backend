@@ -3,15 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
-from app.config.settings import get_settings
 from app.api.endpoints import yt_dlp
 
-settings = get_settings()
-
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
-)
+app = FastAPI()
 
 # 配置CORS
 app.add_middleware(
@@ -25,7 +19,7 @@ app.add_middleware(
 # 注册路由
 app.include_router(
     yt_dlp.router,
-    prefix=f"{settings.API_V1_STR}/youtube",
+    prefix=f"/api/v1/youtube",
     tags=["youtube"]
 )
 
