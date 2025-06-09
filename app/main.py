@@ -1,4 +1,5 @@
 # main.py
+import app.config.settings 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException

@@ -1,10 +1,11 @@
-from app.services.yt_dlp_service import get_video_summary_service, SubtitleError, get_video_info_service
+from app.services.yt_dlp_service import YoutubeDLPService, SubtitleError, VideoProcessingError
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
 import traceback
 import sys
 import logging
 import os
+from app.config.redis_config import redis_client
 
 # 配置日志
 logging.basicConfig(
@@ -22,22 +23,23 @@ os.environ["PYTHONUNBUFFERED"] = "1"
 
 router = APIRouter()
 
+# Initialize the service
+yt_service = YoutubeDLPService(redis_client=redis_client, logger=logger)
 
 class SummaryRequest(BaseModel):
     video_id: str
 class VideoRequest(BaseModel):
     video_url: str
 
-
 @router.post("/videoinfo")
 async def video_info(request: VideoRequest):
     logger.info(f"Get video info via video URL: {request.video_url}")
     try:
-        video_info = await get_video_info_service(request.video_url)
+        video_info = await yt_service.get_video_info(request.video_url)
         return {
-            "msg":"",
-            "code":"000",
-            "data":video_info
+            "msg": "",
+            "code": "000",
+            "data": video_info
         }
     except Exception as e:
         # 获取完整的错误堆栈
@@ -52,13 +54,12 @@ async def video_info(request: VideoRequest):
             status_code=500,
             detail=f"Error get video info {str(e)}\nTraceback:\n{error_traceback}"
         )
-    
 
 @router.post("/summary")
 async def summary_post(request: SummaryRequest):
     logger.info(f"Processing video ID: {request.video_id}")
     try:
-        data = await get_video_summary_service(request.video_id)
+        data = await yt_service.get_video_summary(request.video_id)
         if not data or len(data) == 0:
             return {
                 "msg": "No video summary",
@@ -70,10 +71,17 @@ async def summary_post(request: SummaryRequest):
             "code": "000",
             "data": data
         }
-    except SubtitleError as subError:
-        logger.warning(f"Subtitle error: {str(subError)}")
+    except VideoProcessingError as e:
+        logger.warning(f"Video processing error: {str(e)}")
         return {
-            "msg": str(subError),
+            "msg": str(e),
+            "code": "002",
+            "data": None
+        }
+    except SubtitleError as e:
+        logger.warning(f"Subtitle error: {str(e)}")
+        return {
+            "msg": str(e),
             "code": "001",
             "data": None
         }
@@ -90,28 +98,6 @@ async def summary_post(request: SummaryRequest):
             status_code=500,
             detail=f"Error processing video: {str(e)}\nTraceback:\n{error_traceback}"
         )
-    
-
-
-async def test():
-    video_url = "https://www.youtube.com/watch?v=SUY_E-I7O_Y&t=2876s"
-    
-    summary_result = await get_video_summary(video_url)
-
-        # Pretty print the results
-    print("\n==== VIDEO SUMMARY RESULTS ====\n")
-    
-    print("OUTLINE WITH TIMESTAMPS:")
-    for summary in summary_result["video_summary"] :
-        for item in summary["outline"]:
-            print(f"[{item['timestamp']}]  {item['topic']}")
-        
-        print("\nSUMMARY:")
-        print(summary["summary"])
-    
-        print("\nKEYWORDS:")
-        print(", ".join(summary["keywords"]))
-
 
 @router.post("/summary_mock")
 async def summary_mock():

@@ -9,6 +9,7 @@ class RedisClient:
     def get_instance(cls) -> redis.Redis:
         if cls._instance is None:
             redis_url = os.getenv("REDIS_URL")
+            print(redis_url)
             if not redis_url:
                 raise ValueError("REDIS_URL environment variable is not set")
             cls._instance = redis.Redis.from_url(redis_url)

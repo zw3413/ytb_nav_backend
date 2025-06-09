@@ -12,8 +12,7 @@ import logging
 import datetime
 
 from yt_dlp.version import __version__
-
-print(f"yt_dlp version: {__version__}")
+print(__version__)
 
 # 配置日志
 logging.basicConfig(
@@ -45,6 +44,7 @@ def get_cookies_path() -> Optional[str]:
         
     # 然后检查默认位置
     default_paths = [
+        './cookies.txt',
         os.path.expanduser('~/.config/yt-dlp/cookies.txt'),
         os.path.expanduser('~/.local/share/yt-dlp/cookies.txt'),
         '/opt/ytb_nav/cookies.txt'
@@ -121,18 +121,20 @@ def get_video_info_utils(url: str) -> Dict[str, Any]:
             'geo_bypass_country': None,
             'geo_bypass_ip_block': None,
             
-            # 添加新的反检测选项
+            # 更新的反检测选项，解决PO Token和SABR问题
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web'],
-                    'player_skip': ['webpage', 'configs'],
-                    'skip': ['dash', 'hls'],
+                    'player_client': ['web', 'ios', 'mweb'],  # 避免android客户端，优先使用web
+                    'player_skip': ['android'],  # 跳过android客户端
                     'formats': 'missing_pot',  # 允许使用缺少 PO Token 的格式
-                    'visitor_data': 'CgtQc0FfV2FfV0FfUSiImZ6qBjIGCgJHQg%3D%3D',  # 添加访客数据
+                    'innertube_host': 'www.youtube.com',
+                    'innertube_key': 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8',
+                    'visitor_data': None,  # 不使用visitor_data以避免检测
+                    'po_token': None,      # 明确设置为None
                 }
             },
             'format_sort': ['res', 'ext:mp4:m4a'],
-            'format': 'worst',
+            'format': 'bv*[height<=720]+ba/b[height<=720] / wv*+ba/w / best[height<=720]',  # 更保守的格式选择
             'nocheckcertificate': True,
             'legacy_server_connect': True,
         }

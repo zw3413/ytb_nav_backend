@@ -4,7 +4,7 @@ import re
 import os
 import json
 from typing import Dict, List, Tuple, Optional, Any
-from dotenv import load_dotenv
+
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager, config_list_from_json
 from app.agents.prompts import (
     SUMMARIZER_SYSTEM_MESSAGE,
@@ -13,8 +13,7 @@ from app.agents.prompts import (
     VALIDATOR_SYSTEM_MESSAGE
 )
 
-# 加载环境变量
-load_dotenv()
+
 
 class CaptionParsingError(Exception):
     """字幕解析相关的异常。"""
